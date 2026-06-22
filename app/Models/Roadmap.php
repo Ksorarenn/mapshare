@@ -8,23 +8,38 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Roadmap extends Model
 {
-    // Разрешаем массовое заполнение полей
-    protected $fillable = ['user_id', 'title', 'description', 'graph_data'];
+    // Mass assignable attributes, включая поля из ТЗ
+    protected $fillable = [
+        'user_id',
+        'title',
+        'description',
+        'graph_data',
+    ];
 
-    // КРИТИЧЕСКИ ВАЖНО: автоматически превращает JSONB из базы в PHP-массив
+    // Приведение типов, graph_data → array
     protected $casts = [
         'graph_data' => 'array',
     ];
 
-    // Связь: Роадмап принадлежит пользователю
+    // Скоуп для получения карт пользователя
+    public function scopeOwnedBy($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    // Связи
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // Связь: У роадмапа много контента для нод
     public function nodeContents(): HasMany
     {
         return $this->hasMany(NodeContent::class);
+    }
+
+    public function progresses(): HasMany
+    {
+        return $this->hasMany(UserRoadmapProgress::class);
     }
 }

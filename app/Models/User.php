@@ -45,11 +45,22 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'role' => 'string',
+    ];
+
+    /**
+     * Связи.
+     */
+    public function roadmaps()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Roadmap::class);
+    }
+
+    public function roadmapProgresses()
+    {
+        return $this->hasMany(UserRoadmapProgress::class);
     }
 }
