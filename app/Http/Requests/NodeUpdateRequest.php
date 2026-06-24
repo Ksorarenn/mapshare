@@ -15,7 +15,7 @@ class NodeUpdateRequest extends FormRequest
     {
         return [
             'content'    => ['sometimes', 'nullable', 'string'],
-            'links'      => ['sometimes', 'nullable', 'json'],
+            'links'      => ['sometimes', 'nullable', 'array'],
             'image_path' => ['sometimes', 'nullable', 'string'],
         ];
     }

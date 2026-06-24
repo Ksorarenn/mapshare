@@ -16,7 +16,7 @@ class NodeStoreRequest extends FormRequest
         return [
             'node_id'    => ['required', 'string'],
             'content'    => ['nullable', 'string'],
-            'links'      => ['nullable', 'json'],
+            'links'      => ['nullable', 'array'],
             'image_path' => ['nullable', 'string'],
         ];
     }
