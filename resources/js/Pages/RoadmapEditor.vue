@@ -6,7 +6,6 @@
           Создание роадмапа
         </h2>
         
-        <!-- Панель управления графиком -->
         <div class="flex items-center space-x-4">
           <div class="flex items-center bg-gray-100 p-1 rounded border space-x-1">
             <button 
@@ -22,10 +21,7 @@
               :disabled="!activeSelectedNodeId"
               :class="[
                 'px-2.5 py-1 text-sm rounded font-medium transition-colors shadow-sm',
-                activeSelectedNodeId 
-                  ? 'bg-red-600 text-white hover:bg-red-500 cursor-pointer' 
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              ]"
+                activeSelectedNodeId ? 'bg-red-600 text-white hover:bg-red-500 cursor-pointer': 'bg-gray-200 text-gray-400 cursor-not-allowed']"
               title="Удалить выбранный узел"
             >
               Удалить
@@ -53,16 +49,16 @@
       </div>
     </template>
 
-    <!-- Основная рабочая область -->
-    <div class="w-full h-[calc(100vh-160px)] flex overflow-hidden relative bg-gray-50">
+    <div class="w-full h-[calc(100vh-160px)] flex overflow-hidden relative bg-white">
       
-      <!-- Холст VueFlow (Фикс сброса: добавили @click.self для перехвата кликов на саму область холста) -->
-      <div class="flex-1 h-full bg-white transition-all duration-300" @click.self="deselectNode">
+      <div class="flex-1 h-full bg-white relative">
         <VueFlow
           v-model:nodes="nodes"
           v-model:edges="edges"
           :fit-view="true"
-          class="h-full w-full border-r"
+          :pan-on-drag="true"
+          :zoom-on-scroll="true"
+          class="h-full w-full"
           @pane-dblclick="addNode"
           @pane-click="deselectNode"
           @node-click="selectNode"
@@ -74,13 +70,10 @@
             </div>
           </template>
 
-          <!-- Фикс клика: передаем деселект внутрь бэкграунда, если плагин VueFlow перехватывает его -->
-          <Background @click="deselectNode" />
           <Controls />
         </VueFlow>
       </div>
 
-      <!-- Выдвижная боковая панель с Markdown -->
       <div 
         :class="[
           'h-full bg-white border-l shadow-2xl transition-all duration-300 flex flex-col z-10',
@@ -93,7 +86,6 @@
             <button @click="isSidebarOpen = false" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
           </div>
 
-          <!-- Переключатель вкладок: Редактирование / Просмотр -->
           <div class="flex bg-gray-100 p-0.5 rounded mb-4">
             <button 
               @click="activeTab = 'edit'"
@@ -109,10 +101,8 @@
             </button>
           </div>
 
-          <!-- Тело вкладок -->
           <div class="flex-1 flex flex-col min-h-0">
             
-            <!-- Вкладка РЕДАКТИРОВАНИЯ -->
             <div v-if="activeTab === 'edit'" class="space-y-4 flex-1 flex flex-col">
               <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Название на карте</label>
@@ -134,7 +124,6 @@
               </div>
             </div>
 
-            <!-- Вкладка ПРОСМОТРА (Markdown Превью) -->
             <div 
               v-else 
               class="flex-1 border rounded p-3 bg-gray-50 overflow-y-auto markdown-body text-sm text-gray-800"
@@ -157,15 +146,18 @@
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { marked } from 'marked'; // Импортируем парсер Markdown [1]
+import { marked } from 'marked';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { VueFlow, addEdge, useVueFlow } from '@vue-flow/core';
-import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
+
+// КРИТИЧЕСКИЙ ФИКС: Импортируем базовые стили библиотеки, чтобы контейнер не ломался и растягивался на весь экран
+import '@vue-flow/core/dist/style.css';
+import '@vue-flow/core/dist/theme-default.css';
+import '@vue-flow/controls/dist/style.css';
 
 const { project } = useVueFlow();
 
-// Настройка marked: открывать все ссылки в новой вкладке
 marked.setOptions({
   gfm: true,
   breaks: true,
@@ -187,13 +179,11 @@ const nodes = ref([
 
 const edges = ref([]);
 
-// Сайдбар и вкладки
 const isSidebarOpen = ref(false);
-const activeTab = ref('edit'); // 'edit' или 'preview'
+const activeTab = ref('edit');
 const activeSelectedNodeId = ref(null); 
 const selectedNode = ref(null);
 
-// Вычисляемое свойство для рендеринга Markdown [1]
 const markdownPreview = computed(() => {
   if (!selectedNode.value?.data?.description) {
     return '<p class="text-gray-400 italic">Описание отсутствует...</p>';
@@ -203,18 +193,14 @@ const markdownPreview = computed(() => {
 
 // ---------- Хелперы ----------
 
-// 1. Выделение узла (Одиночный Клик ЛКМ)
 function selectNode({ node }) {
   if (!node) return;
   
   activeSelectedNodeId.value = node.id;
   selectedNode.value = nodes.value.find(n => n.id === node.id);
   isSidebarOpen.value = true;
-  
-  // При переключении на другой узел возвращаем вкладку редактирования
   activeTab.value = 'edit';
   
-  // Подсветка синей рамкой
   nodes.value.forEach(n => {
     if (n.id === node.id) {
       n.style = { ...n.style, borderColor: '#2563eb', borderWidth: '3px' };
@@ -224,7 +210,6 @@ function selectNode({ node }) {
   });
 }
 
-// 2. ФИКС: Снятие выделения (клик по холсту / бэкграунду)
 function deselectNode() {
   activeSelectedNodeId.value = null;
   selectedNode.value = null;
@@ -235,7 +220,6 @@ function deselectNode() {
   });
 }
 
-// 3. Создание узла по двойному клику
 function addNode(event) {
   const position = project({
     x: event.clientX,
@@ -250,32 +234,30 @@ function addNodeViaButton() {
 }
 
 function createNewNode(position) {
-  const id = (nodes.value.length + 1).toString();
+  // Генерируем уникальный ID на основе текущего времени в миллисекундах
+  // Приведение к string обязательно, так как Vue Flow требует строковые ID
+  const id = Date.now().toString();
+  
   nodes.value.push({
     id,
     type: 'default',
     position,
     data: { 
-      title: `Новый шаг ${id}`, 
+      title: `Новый шаг`, // Убрали индекс из названия, так как таймштамп в названии не нужен
       description: '* Пункт 1\n* Пункт 2' 
     },
     style: { width: 'max-content', minWidth: '100px', padding: '12px 16px', border: '2px solid #4a5568', borderRadius: '8px', background: '#fff' },
   });
 }
 
-// 4. Удаление выделенного узла
 function deleteSelectedNode() {
   if (!activeSelectedNodeId.value) return;
 
-  // Удаляем узел из массива
   nodes.value = nodes.value.filter(n => n.id !== activeSelectedNodeId.value);
-  
-  // Очищаем связанные ребра (edges)
   edges.value = edges.value.filter(
     e => e.source !== activeSelectedNodeId.value && e.target !== activeSelectedNodeId.value
   );
 
-  // Сбрасываем состояние выделения и закрываем панель
   activeSelectedNodeId.value = null;
   selectedNode.value = null;
   isSidebarOpen.value = false;
@@ -335,7 +317,6 @@ function reset() {
   border-color: #818cf8 !important;
 }
 
-/* Стилизация отрендеренного Markdown HTML внутри превью */
 .markdown-body :deep(h1) { 
   font-size: 1.5rem; 
   font-weight: 700; 
