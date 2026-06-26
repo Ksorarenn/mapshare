@@ -143,7 +143,7 @@
 
           </div>
           
-          <div class="pt-4 border-t mt-4 text-xs text-gray-400 flex justify-between shrink-0">
+          <div class="pt-2 mt-2 text-xs text-gray-400 flex justify-between shrink-0">
             <span>ID узла: {{ selectedNode.id }}</span>
           </div>
         </div>
