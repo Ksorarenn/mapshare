@@ -42,4 +42,9 @@ class ProgressController extends Controller
 
         return response()->json($progress, Response::HTTP_OK);
     }
+    public function update(Request $request)
+    {
+    // пока не реализовано
+    return response()->json(['message' => 'Not implemented'], 501);
+    }
 }

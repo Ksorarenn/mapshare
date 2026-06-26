@@ -31,7 +31,7 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Log in" />
+        <Head title="Войти" />
 
         <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
             {{ status }}
@@ -79,12 +79,14 @@ const submit = () => {
             </div>
 
             <div class="mt-4 flex items-center justify-end">
+                <span class="text-sm font-normal text-gray-600">
+                    Ещё нет учётной записи?&nbsp;
+                </span>
                 <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
+                    :href="route('register')"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                    Forgot your password?
+                    Создать
                 </Link>
 
                 <PrimaryButton
@@ -92,7 +94,7 @@ const submit = () => {
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
-                    Log in
+                    Войти
                 </PrimaryButton>
             </div>
         </form>
