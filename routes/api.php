@@ -36,8 +36,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Roadmaps management for authenticated users
     Route::post('/roadmaps', [RoadmapController::class, 'store']);
     Route::patch('/roadmaps/{id}', [RoadmapController::class, 'update']);
-    Route::delete('/roadmaps/{id}', [RoadmapController::class, 'destroy']);
-    Route::get('/user/roadmaps', [RoadmapController::class, 'userRoadmaps']);
+    //Route::delete('/roadmaps/{id}', [RoadmapController::class, 'destroy']);
+    Route::get('/user/roadmaps', [RoadmapController::class, 'userRoadmaps'])->name('user.roadmaps');
 
     // Nodes management
     Route::post('/roadmaps/{roadmapId}/nodes', [NodeController::class, 'store']);

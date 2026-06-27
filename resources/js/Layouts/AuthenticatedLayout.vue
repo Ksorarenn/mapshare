@@ -43,13 +43,13 @@ const showingNavigationDropdown = ref(false);
                                     :href="route('gallery')"
                                     :active="route().current('gallery')"
                                 >
-                                    Gallery
+                                    Галерея
                                 </NavLink>
                                 <NavLink
                                     :href="route('my-roadmaps')"
                                     :active="route().current('my-roadmaps')"
                                 >
-                                    My roadmaps
+                                    Мои роадмапы
                                 </NavLink>
                             </div>
                         </div>
@@ -162,13 +162,13 @@ const showingNavigationDropdown = ref(false);
                             :href="route('gallery')"
                             :active="route().current('gallery')"
                         >
-                            Gallery
+                            Галерея
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             :href="'/roadmaps'"
                             :active="route().current('roadmaps')"
                         >
-                            My roadmaps
+                            Мои роадмапы
                         </ResponsiveNavLink>
                     </div>
                     

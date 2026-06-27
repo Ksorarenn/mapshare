@@ -1,27 +1,47 @@
 <template>
   <AuthenticatedLayout>
     <template #header>
-      <div class="flex items-center justify-between">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-          Создание роадмапа
-        </h2>
+      <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        Создание роадмапа
+      </h2>
+    </template>
+
+    <div class="w-full h-[calc(100vh-160px)] flex overflow-hidden relative bg-white border-t border-gray-200">
+      
+      <div class="absolute top-0 left-0 right-0 h-16 bg-gray-50/90 backdrop-blur-sm border-b border-gray-200 z-20 flex items-center justify-between px-6 shadow-sm">
+        
+        <div class="flex items-center space-x-3 flex-1 max-w-md mr-4">
+          <label for="roadmap-title" class="text-xs font-bold text-gray-400 uppercase tracking-wider shrink-0">Название:</label>
+          <input 
+            id="roadmap-title"
+            v-model="roadmapTitle" 
+            type="text" 
+            class="w-full bg-white border border-gray-200 rounded-md px-3 py-1.5 text-sm font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm" 
+            placeholder="Введите название роадмапа..."
+          />
+        </div>
         
         <div class="flex items-center space-x-4">
-          <div class="flex items-center bg-gray-100 p-1 rounded border space-x-1">
+          <div class="flex items-center bg-white p-1 rounded-lg border border-gray-200 space-x-1 shadow-sm">
             <button 
+              v-if="isEditMode"
               @click="addNodeViaButton" 
-              class="px-2.5 py-1 bg-white text-gray-700 border rounded hover:bg-gray-50 text-sm flex items-center font-medium shadow-sm"
+              class="px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 text-sm flex items-center font-medium shadow-sm transition-colors"
               title="Добавить узел"
             >
-              <span class="text-lg leading-none mr-1">+</span> Добавить
+              <span class="text-lg leading-none mr-1.5 text-indigo-600">+</span> Добавить
             </button>
             
             <button 
+              v-if="isEditMode"
               @click="deleteSelectedNode" 
               :disabled="!activeSelectedNodeId"
               :class="[
-                'px-2.5 py-1 text-sm rounded font-medium transition-colors shadow-sm',
-                activeSelectedNodeId ? 'bg-red-600 text-white hover:bg-red-500 cursor-pointer': 'bg-gray-200 text-gray-400 cursor-not-allowed']"
+                'px-3 py-1.5 text-sm rounded-md font-medium transition-colors shadow-sm',
+                activeSelectedNodeId 
+                  ? 'bg-red-600 text-white hover:bg-red-500 cursor-pointer' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              ]"
               title="Удалить выбранный узел"
             >
               Удалить
@@ -32,26 +52,31 @@
             @click="isSidebarOpen = !isSidebarOpen"
             :disabled="!activeSelectedNodeId"
             :class="[
-              'px-3 py-1 text-sm border rounded font-medium shadow-sm transition-colors',
+              'px-3 py-1.5 text-sm border rounded-md font-medium shadow-sm transition-colors',
               activeSelectedNodeId 
-                ? 'bg-white text-gray-700 hover:bg-gray-50' 
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50' 
+                : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
             ]"
           >
             {{ isSidebarOpen ? 'Скрыть панель →' : '← Показать панель' }}
           </button>
 
-          <div class="space-x-2 border-l pl-4">
-            <button @click="save" class="px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-500 text-sm font-medium shadow-sm">Сохранить</button>
-            <button @click="reset" class="px-3 py-1.5 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 text-sm font-medium shadow-sm">Сбросить</button>
+          <div class="space-x-2 border-l border-gray-200 pl-4 flex items-center">
+            <button 
+              v-if="isOwner" 
+              @click="isEditMode = !isEditMode" 
+              class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-md font-medium transition-colors"
+            >
+              {{ isEditMode ? 'Режим просмотра' : 'Режим редактирования' }}
+            </button>
+
+            <button v-if="isEditMode" @click="save" class="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 text-sm font-medium shadow-sm transition-colors">Сохранить</button>
+            <button v-if="isEditMode" @click="reset" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium shadow-sm transition-colors">Сбросить</button>
           </div>
         </div>
       </div>
-    </template>
 
-    <div class="w-full h-[calc(100vh-160px)] flex overflow-hidden relative bg-white">
-      
-      <div class="flex-1 h-full bg-white relative">
+      <div class="flex-1 h-full bg-white relative pt-16">
         <VueFlow
           v-model:nodes="nodes"
           v-model:edges="edges"
@@ -64,10 +89,26 @@
           @node-click="selectNode"
           @connect="onConnect"
         >
-          <template #node-default="{ data }">
-            <div class="font-medium text-sm text-gray-900">
-              {{ data.title }}
+          <template #node-default="{ id, data }">
+            <Handle id="target" type="target" position="top" class="!bg-indigo-500 !w-2.5 !h-2.5" />
+            
+            <div class="flex items-center space-x-2.5 px-1 py-0.5">
+              <div v-if="!isEditMode" class="flex items-center shrink-0">
+                <input 
+                  type="checkbox" 
+                  :checked="completedNodes.includes(id)" 
+                  @change="toggleNodeProgress(id)"
+                  @click.stop
+                  class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer transition-all"
+                />
+              </div>
+
+              <div :class="['font-medium text-sm transition-all select-none', completedNodes.includes(id) ? 'line-through text-gray-400' : 'text-gray-900']">
+                {{ data.title }}
+              </div>
             </div>
+            
+            <Handle id="source" type="source" position="bottom" class="!bg-indigo-500 !w-2.5 !h-2.5" />
           </template>
 
           <Controls />
@@ -76,7 +117,7 @@
 
       <div 
         :class="[
-          'h-full bg-white border-l shadow-2xl transition-all duration-300 flex flex-col z-10',
+          'h-full bg-white border-l border-gray-200 shadow-2xl transition-all duration-300 flex flex-col z-30',
           isSidebarOpen && activeSelectedNodeId ? 'w-96 opacity-100' : 'w-0 opacity-0 overflow-hidden border-l-0'
         ]"
       >
@@ -86,7 +127,7 @@
             <button @click="isSidebarOpen = false" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
           </div>
 
-          <div class="flex bg-gray-100 p-0.5 rounded mb-4">
+          <div v-if="isEditMode" class="flex bg-gray-100 p-0.5 rounded mb-4">
             <button 
               @click="activeTab = 'edit'"
               :class="['flex-1 py-1 text-xs font-medium rounded transition-colors', activeTab === 'edit' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900']"
@@ -102,8 +143,7 @@
           </div>
 
           <div class="flex-1 flex flex-col min-h-0">
-            
-            <div v-if="activeTab === 'edit'" class="space-y-4 flex-1 flex flex-col">
+            <div v-if="activeTab === 'edit' && isEditMode" class="space-y-4 flex-1 flex flex-col">
               <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Название на карте</label>
                 <input 
@@ -129,7 +169,6 @@
               class="flex-1 border rounded p-3 bg-gray-50 overflow-y-auto markdown-body text-sm text-gray-800"
               v-html="markdownPreview"
             ></div>
-
           </div>
           
           <div class="pt-2 mt-2 text-xs text-gray-400 flex justify-between shrink-0">
@@ -143,18 +182,35 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
-import axios from 'axios';
+import { ref, computed, onMounted } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import { marked } from 'marked';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { VueFlow, addEdge, useVueFlow } from '@vue-flow/core';
+import { VueFlow, addEdge, useVueFlow, Handle } from '@vue-flow/core';
 import { Controls } from '@vue-flow/controls';
-
 // КРИТИЧЕСКИЙ ФИКС: Импортируем базовые стили библиотеки, чтобы контейнер не ломался и растягивался на весь экран
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
+
+const props = defineProps({
+  roadmap: { type: Object, default: null }
+});
+
+const page = usePage();
+// Текущий залогиненный юзер
+const currentUser = computed(() => page.props.auth.user); 
+
+// Флаг: является ли текущий юзер владельцем этой карты
+const isOwner = computed(() => {
+  if (!props.roadmap) return true; // Если карта новая — мы её создатели
+  return props.roadmap.user_id === currentUser.value.id;
+});
+
+// Переключатель режимов (если владелец захочет посмотреть на карту глазами гостя)
+const isEditMode = ref(isOwner.value);
+
+const completedNodes = ref([]); // Сюда будем загружать массив ID из таблицы UserRoadmapProgress
 
 const { project } = useVueFlow();
 
@@ -162,22 +218,30 @@ marked.setOptions({
   gfm: true,
   breaks: true,
 });
-
 // ---------- Состояние ----------
-const nodes = ref([
-  {
-    id: '1',
-    type: 'default',
-    position: { x: 100, y: 100 },
-    data: { 
-      title: 'Начало пути', 
-      description: '# Добро пожаловать!\n\nЭто стартовая точка вашего роадмапа. \n\n### Полезные ссылки:\n* [Официальный сайт Vue](https://vuejs.org)\n* [Vue Flow Документация](https://vueflow.dev)' 
-    },
-    style: { width: 'max-content', minWidth: '100px', padding: '12px 16px', border: '2px solid #4a5568', borderRadius: '8px', background: '#fff' },
-  },
-]);
+// Если роадмап передан из контроллера — берем его имя, иначе дефолтное
+const roadmapTitle = ref(props.roadmap ? props.roadmap.title : 'Мой новый роадмап');
 
-const edges = ref([]);
+// Если есть сохраненный graph_data — парсим его ноды, иначе берем стартовую ноду
+const nodes = ref(
+  props.roadmap && props.roadmap.graph_data?.nodes 
+    ? props.roadmap.graph_data.nodes 
+    : [
+        {
+          id: '1',
+          type: 'default',
+          position: { x: 100, y: 100 },
+          data: { 
+            title: 'Начало пути', 
+            description: '# Добро пожаловать!\n\nЭто стартовая точка вашего роадмапа.' 
+          },
+          style: { width: 'max-content', minWidth: '100px', padding: '12px 16px', border: '2px solid #4a5568', borderRadius: '8px', background: '#fff' },
+        }
+      ]
+);
+
+// Если есть сохраненный graph_data — берем связи, иначе пустой массив
+const edges = ref(props.roadmap && props.roadmap.graph_data?.edges ? props.roadmap.graph_data.edges : []);
 
 const isSidebarOpen = ref(false);
 const activeTab = ref('edit');
@@ -190,7 +254,37 @@ const markdownPreview = computed(() => {
   }
   return marked.parse(selectedNode.value.data.description);
 });
+async function toggleNodeProgress(nodeId) {
+  if (completedNodes.value.includes(nodeId)) {
+    completedNodes.value = completedNodes.value.filter(id => id !== nodeId);
+  } else {
+    completedNodes.value.push(nodeId);
+  }
 
+  try {
+    // Отправляем обновленный массив в твой ProgressController
+    await axios.post('/progress', {
+      roadmap_id: props.roadmap.id,
+      completed_nodes: completedNodes.value
+    });
+  } catch (e) {
+    console.error('Ошибка сохранения прогресса:', e);
+  }
+}
+
+// При загрузке страницы подтягиваем существующий прогресс юзера
+onMounted(async () => {
+  if (props.roadmap && !isEditMode.value) {
+    try {
+      const { data } = await axios.get(`/progress/${props.roadmap.id}`);
+      if (data) {
+        completedNodes.value = data.completed_nodes || [];
+      }
+    } catch (e) {
+      console.log('Прогресс для этой карты еще не создан');
+    }
+  }
+});
 // ---------- Хелперы ----------
 
 function selectNode({ node }) {
@@ -268,19 +362,39 @@ function onConnect(params) {
 }
 
 async function save() {
-  try {
-    await axios.post('/roadmaps', {
-      title: 'Новый роадмап',
-      description: '',
-      graph_data: { nodes: nodes.value, edges: edges.value },
+  const titleToSend = roadmapTitle.value.trim() || 'Безымянный роадмап';
+  const graphDataToSend = { nodes: nodes.value, edges: edges.value };
+
+  // Если у нас открыта существующая карта (есть props.roadmap)
+  if (props.roadmap && props.roadmap.id) {
+    router.patch(`/roadmaps/${props.roadmap.id}`, {
+      title: titleToSend,
+      description: props.roadmap.description || '',
+      graph_data: graphDataToSend,
+    }, {
+      onSuccess: () => {
+        alert('Роадмап успешно обновлен!');
+      },
+      onError: (errors) => {
+        console.error('Ошибка обновления:', errors);
+      }
     });
-    router.visit('/my-roadmaps');
-  } catch (e) {
-    console.error('Ошибка сохранения:', e);
+  } else {
+    // Если создаем новую карту
+    router.post('/roadmaps', {
+      title: titleToSend,
+      description: '',
+      graph_data: graphDataToSend,
+    }, {
+      onError: (errors) => {
+        console.error('Ошибка создания:', errors);
+      }
+    });
   }
 }
 
 function reset() {
+  roadmapTitle.value = 'Мой новый роадмап';
   nodes.value = [
     {
       id: '1',

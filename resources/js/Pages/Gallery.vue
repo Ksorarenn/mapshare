@@ -13,6 +13,13 @@
               <div v-for="roadmap in filteredRoadmaps" :key="roadmap.id" class="p-4 border rounded shadow cursor-pointer" @click="openViewer(roadmap.id)">
                 <h3 class="font-bold">{{ roadmap.title }}</h3>
                 <p class="text-sm text-gray-600">{{ roadmap.description }}</p>
+                <button 
+    v-if="isAdmin" 
+    @click.stop="adminDeleteRoadmap(roadmap.id, roadmap.title)" 
+    class="absolute bottom-4 right-4 bg-red-600 hover:bg-red-700 text-white text-xs px-2.5 py-1.5 rounded font-medium shadow transition-colors z-10"
+  >
+    Удалить (Админ)
+  </button>
               </div>
             </div>
             <div class="flex justify-between items-center mt-4">
@@ -29,10 +36,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref, computed, onMounted } from 'vue';
 import { useRoadmapStore } from '@/stores/roadmap';
-import { router, Link } from '@inertiajs/vue3';
+import { router, Link, usePage } from '@inertiajs/vue3';
 
 const search = ref('');
 const roadmapStore = useRoadmapStore();
+const page = usePage();
+
+const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
 
 onMounted(() => roadmapStore.fetchPublic());
 
@@ -43,6 +53,17 @@ const filteredRoadmaps = computed(() => {
 
 function openViewer(id) {
   router.visit(`/roadmaps/${id}`);
+}
+
+function adminDeleteRoadmap(id, title) {
+  if (confirm(`Админ-действие: Вы уверены, что хотите БЕЗВОЗВРАТНО удалить роадмап "${title}"?`)) {
+    router.delete(`/roadmaps/${id}`, {
+    preserveScroll: true, // Чтобы страница не прыгала вверх после удаления
+    onSuccess: () => {
+        roadmapStore.publicRoadmaps = roadmapStore.publicRoadmaps.filter(r => r.id !== id);
+      }
+    });
+  }
 }
 
 const gridClass = computed(() => (window.innerWidth < 640 ? 'grid-cols-1' : 'grid-cols-3'));

@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\RoadmapStoreRequest;
 use App\Http\Requests\RoadmapUpdateRequest;
 use App\Models\Roadmap;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Inertia\Inertia;
 
 class RoadmapController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Список публичных роадмапов с пагинацией и поиском.
      */
@@ -29,11 +32,16 @@ class RoadmapController extends Controller
      * Показать конкретный роадмап с содержимым узлов.
      */
     public function show($id)
-    {
-        $roadmap = Roadmap::with('nodeContents')->findOrFail($id);
-        $roadmap->increment('views_count');
-        return response()->json($roadmap, Response::HTTP_OK);
-    }
+{
+    // Загружаем карту из базы
+    $roadmap = Roadmap::findOrFail($id);
+
+    // Рендерим твой Vue компонент (например, RoadmapEditor или RoadmapView) 
+    // и прокидываем туда сохраненные данные graph_data и title
+    return Inertia::render('RoadmapEditor', [
+        'roadmap' => $roadmap
+    ]);
+}
 
     /**
      * Создать новый роадмап.
@@ -42,31 +50,46 @@ class RoadmapController extends Controller
     {
         $data = $request->validated();
         $data['user_id'] = $request->user()->id;
+        
         $roadmap = Roadmap::create($data);
-        return response()->json($roadmap, Response::HTTP_CREATED);
+        
+        // ФИКС: Вместо json ответа делаем редирект Inertia на страницу списка личных карт
+        return redirect()->route('my-roadmaps');
     }
 
-    /**
-     * Обновить существующий роадмап.
-     */
     public function update(RoadmapUpdateRequest $request, $id)
     {
         $roadmap = Roadmap::findOrFail($id);
-        // проверка прав будет в политике RoadmapPolicy
+        
+        // КРИТИЧЕСКИЙ ФИКС: Laravel выбросит 403 ошибку, если юзер не владелец
+        $this->authorize('update', $roadmap); 
+
         $roadmap->update($request->validated());
-        return response()->json($roadmap, Response::HTTP_OK);
+        return redirect()->back();
     }
 
     /**
-     * Удалить роадмап (владелец или админ).
-     */
-    public function destroy($id)
-    {
-        $roadmap = Roadmap::findOrFail($id);
-        // проверка прав будет в политике RoadmapPolicy
-        $roadmap->delete();
-        return response()->json(['message' => 'Roadmap deleted'], Response::HTTP_OK);
+ * Удалить роадмап (владелец или админ).
+ */
+public function destroy($id)
+{
+    $roadmap = Roadmap::findOrFail($id);
+
+    // Вытаскиваем залогиненного пользователя
+    $user = auth()->user();
+
+    // Защита: Удалить карту может только создатель ЛИБО администратор
+    if ($user->id !== $roadmap->user_id && !$user->role === 'admin') {
+        abort(403, 'У вас нет прав на удаление этого роадмапа.');
     }
+
+    $roadmap->delete();
+
+    // ФИКС РЕДИРЕКТА ДЛЯ INERTIA:
+    // Вместо возврата json (response()->json) делаем возврат назад,
+    // иначе Inertia-страница сломается после удаления!
+    return redirect()->back();
+}
 
     /**
      * Список роадмапов текущего пользователя.
@@ -74,6 +97,10 @@ class RoadmapController extends Controller
     public function userRoadmaps(Request $request)
     {
         $roadmaps = Roadmap::ownedBy($request->user()->id)->orderByDesc('created_at')->get();
-        return response()->json($roadmaps, Response::HTTP_OK);
+    
+    // Возвращаем СТРАНИЦУ Inertia, а не JSON!
+    return Inertia::render('MyRoadmaps', [
+        'roadmaps' => $roadmaps
+    ]);
     }
 }

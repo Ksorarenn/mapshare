@@ -16,7 +16,7 @@ class RoadmapUpdateRequest extends FormRequest
         return [
             'title'       => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'graph_data'  => ['sometimes', 'nullable', 'json'],
+            'graph_data'  => ['sometimes', 'nullable', 'array'],
         ];
     }
 }
