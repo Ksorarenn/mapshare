@@ -44,9 +44,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/roadmaps/{roadmapId}/nodes/{nodeId}', [NodeController::class, 'update']);
     Route::delete('/roadmaps/{roadmapId}/nodes/{nodeId}', [NodeController::class, 'destroy']);
 
-    // Media upload for a node
-    Route::post('/roadmaps/{roadmapId}/media', [MediaController::class, 'store']);
-
     // Progress tracking
     Route::post('/progress', [ProgressController::class, 'store']);
     Route::get('/progress/{roadmapId}', [ProgressController::class, 'show']);

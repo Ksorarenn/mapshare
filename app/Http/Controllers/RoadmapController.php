@@ -17,16 +17,17 @@ class RoadmapController extends Controller
      * Список публичных роадмапов с пагинацией и поиском.
      */
     public function index(Request $request)
-    {
-        $query = Roadmap::query();
+{
+    $query = Roadmap::query();
 
-        if ($search = $request->query('search')) {
-            $query->where('title', 'ilike', "%{$search}%");
-        }
-
-        $roadmaps = $query->orderByDesc('created_at')->paginate(15);
-        return response()->json($roadmaps, Response::HTTP_OK);
+    if ($search = $request->query('search')) {
+        // Приводим и поле, и строку поиска к нижнему регистру через lower()
+        $query->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($search) . '%']);
     }
+
+    $roadmaps = $query->orderByDesc('created_at')->paginate(15);
+    return response()->json($roadmaps, Response::HTTP_OK);
+}
 
     /**
      * Показать конкретный роадмап с содержимым узлов.
