@@ -16,7 +16,7 @@ class RoadmapStoreRequest extends FormRequest
         return [
             'title'       => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'graph_data'  => ['nullable', 'json'],
+            'graph_data'  => ['nullable', 'array'],
         ];
     }
 }

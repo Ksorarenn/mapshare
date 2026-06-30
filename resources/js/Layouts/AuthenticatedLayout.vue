@@ -12,9 +12,9 @@ const showingNavigationDropdown = ref(false);
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
+        <div class="flex flex-col min-h-screen bg-gray-100">
             <nav
-                class="border-b border-gray-100 bg-white"
+                class="border-b border-gray-100 bg-white sticky top-0 z-10"
             >
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -38,6 +38,18 @@ const showingNavigationDropdown = ref(false);
                                     :active="route().current('dashboard')"
                                 >
                                     Dashboard
+                                </NavLink>
+                                <NavLink
+                                    :href="route('gallery')"
+                                    :active="route().current('gallery')"
+                                >
+                                    Галерея
+                                </NavLink>
+                                <NavLink
+                                    :href="route('my-roadmaps')"
+                                    :active="route().current('my-roadmaps')"
+                                >
+                                    Мои роадмапы
                                 </NavLink>
                             </div>
                         </div>
@@ -74,14 +86,14 @@ const showingNavigationDropdown = ref(false);
                                         <DropdownLink
                                             :href="route('profile.edit')"
                                         >
-                                            Profile
+                                            Профиль
                                         </DropdownLink>
                                         <DropdownLink
                                             :href="route('logout')"
                                             method="post"
                                             as="button"
                                         >
-                                            Log Out
+                                            Выйти из аккаунта
                                         </DropdownLink>
                                     </template>
                                 </Dropdown>
@@ -146,7 +158,20 @@ const showingNavigationDropdown = ref(false);
                         >
                             Dashboard
                         </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('gallery')"
+                            :active="route().current('gallery')"
+                        >
+                            Галерея
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="'/roadmaps'"
+                            :active="route().current('roadmaps')"
+                        >
+                            Мои роадмапы
+                        </ResponsiveNavLink>
                     </div>
+                    
 
                     <!-- Responsive Settings Options -->
                     <div
@@ -178,19 +203,15 @@ const showingNavigationDropdown = ref(false);
                     </div>
                 </div>
             </nav>
-
             <!-- Page Heading -->
-            <header
-                class="bg-white shadow"
-                v-if="$slots.header"
-            >
-                <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
+            <header class="bg-white shadow" v-if="$slots.header">
+              <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                <slot name="header" />
+              </div>
             </header>
 
             <!-- Page Content -->
-            <main>
+            <main class="flex-1 overflow-auto">
                 <slot />
             </main>
         </div>
